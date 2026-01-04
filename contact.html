@@ -10,6 +10,12 @@
     <link rel="icon" href="LOGO_NAME.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
+        })();
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -99,9 +105,7 @@
                 <div class="contact-form-section">
                     <h3>Send <span class="highlight">Message</span></h3>
                     
-                    <form name="contact" id="contactForm" method="POST" data-netlify="true" action="/contact.html?success=true">
-                        <input type="hidden" name="form-name" value="contact">
-                        <input type="text" name="_honeypot" style="display: none;" autocomplete="off">
+                    <form id="contactForm">
                         <div class="form-group">
                             <label for="name">Full Name *</label>
                             <input type="text" id="name" name="name" required>
@@ -255,37 +259,46 @@
             });
         }
 
-        // Contact form handling for Netlify
+        // Contact form handling with EmailJS
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
             contactForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
                 const submitButton = this.querySelector('button[type="submit"]');
                 const originalText = submitButton.innerHTML;
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                 submitButton.disabled = true;
 
-                // Collect form data for WhatsApp notification
-                const formData = {
-                    name: document.getElementById('name').value,
-                    email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value,
-                    company: document.getElementById('company').value,
-                    service: document.getElementById('service').value,
+                const serviceNames = {
+                    'security-assessment': 'Security Assessment',
+                    'vulnerability-scanning': 'Vulnerability Scanning',
+                    'incident-response': 'Incident Response',
+                    'digital-forensics': 'Digital Forensics',
+                    'it-solutions': 'IT Solutions',
+                    'training-awareness': 'Training & Awareness'
+                };
+
+                const templateParams = {
+                    from_name: document.getElementById('name').value,
+                    from_email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value || 'Not provided',
+                    company: document.getElementById('company').value || 'Not provided',
+                    service: serviceNames[document.getElementById('service').value] || 'General Inquiry',
                     message: document.getElementById('message').value
                 };
 
-                // Send WhatsApp notification via Netlify Function
                 try {
-                    await fetch('/.netlify/functions/whatsapp-notify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(formData)
-                    });
-                } catch (err) {
-                    console.log('WhatsApp notification sent (or failed - will retry via webhook)');
+                    await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+                    showSuccessMessage();
+                    this.reset();
+                } catch (error) {
+                    console.error('EmailJS error:', error);
+                    alert('Failed to send message. Please try again or email us directly.');
                 }
 
-                // Netlify Forms will handle the email - form submits normally
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
             });
         }
 
