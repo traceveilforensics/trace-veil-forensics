@@ -401,8 +401,19 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-lg);
+  font-size: 1.2rem;
   transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+}
+
+.theme-btn i {
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.dark-mode .theme-btn i {
+  color: var(--primary);
 }
 
 .theme-btn:hover {
