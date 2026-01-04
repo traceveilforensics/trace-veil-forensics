@@ -6,6 +6,11 @@
     <meta name="description" content="Contact Trace Veil Forensics for cybersecurity consulting, security assessments, incident response, and digital forensics services. Get a free consultation today.">
     <meta name="keywords" content="contact cybersecurity, security consultation, incident response contact, digital forensics contact, Kenya cybersecurity services">
     <title>Contact - Trace Veil Forensics | Get Free Security Consultation</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.emailjs.com https://api.callmebot.com; frame-ancestors 'none';">
+    <meta name="x-content-type-options" content="nosniff">
+    <meta name="x-frame-options" content="DENY">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="LOGO_NAME.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -106,21 +111,22 @@
                     <h3>Send <span class="highlight">Message</span></h3>
                     
                     <form id="contactForm">
+                        <input type="text" name="_honeypot" style="display: none;" autocomplete="off" tabindex="-1">
                         <div class="form-group">
                             <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
+                            <input type="text" id="name" name="name" required minlength="2" maxlength="100">
                         </div>
                         <div class="form-group">
                             <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
+                            <input type="email" id="email" name="email" required maxlength="254">
                         </div>
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone">
+                            <input type="tel" id="phone" name="phone" maxlength="20">
                         </div>
                         <div class="form-group">
                             <label for="company">Company Name</label>
-                            <input type="text" id="company" name="company">
+                            <input type="text" id="company" name="company" maxlength="100">
                         </div>
                         <div class="form-group">
                             <label for="service">Service Interest</label>
@@ -137,7 +143,7 @@
                         
                         <div class="form-group">
                             <label for="message">Message *</label>
-                            <textarea id="message" name="message" rows="6" required placeholder="Describe your security needs or concerns..."></textarea>
+                            <textarea id="message" name="message" rows="6" required minlength="10" maxlength="5000" placeholder="Describe your security needs or concerns..."></textarea>
                         </div>
                         
                         <button type="submit" class="btn btn-primary full-width">
@@ -259,7 +265,7 @@
             });
         }
 
-        // Contact form handling with EmailJS
+        // Contact form handling with EmailJS (SECURE VERSION)
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
             contactForm.addEventListener('submit', async function(e) {
@@ -270,6 +276,101 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                 submitButton.disabled = true;
 
+                // === SPAM PROTECTION: Honeypot ===
+                const honeypot = document.querySelector('input[name="_honeypot"]');
+                if (honeypot && honeypot.value !== '') {
+                    console.log('Spam detected: honeypot filled');
+                    showSuccessMessage(); // Fake success to confuse spammer
+                    this.reset();
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // === RATE LIMITING ===
+                const lastSubmit = localStorage.getItem('lastFormSubmit');
+                const now = Date.now();
+                if (lastSubmit && (now - parseInt(lastSubmit)) < 60000) {
+                    alert('Please wait 1 minute before submitting again.');
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // === INPUT SANITIZATION ===
+                const sanitize = (str) => {
+                    if (!str) return '';
+                    return str.replace(/[<>\"\'\&]/g, (char) => {
+                        const entities = {
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#x27;',
+                            '&': '&amp;'
+                        };
+                        return entities[char] || char;
+                    }).trim();
+                };
+
+                const sanitizeMultiline = (str) => {
+                    if (!str) return '';
+                    return str.replace(/[<>\"\'\&]/g, (char) => {
+                        const entities = {
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#x27;',
+                            '&': '&amp;'
+                        };
+                        return entities[char] || char;
+                    })
+                    .replace(/javascript:/gi, '')
+                    .replace(/data:/gi, '')
+                    .trim();
+                };
+
+                // === VALIDATION ===
+                const name = sanitize(document.getElementById('name').value);
+                const email = sanitize(document.getElementById('email').value);
+                const phone = sanitize(document.getElementById('phone').value);
+                const company = sanitize(document.getElementById('company').value);
+                const service = sanitize(document.getElementById('service').value);
+                const message = sanitizeMultiline(document.getElementById('message').value);
+
+                // Name validation
+                if (name.length < 2 || name.length > 100) {
+                    alert('Name must be between 2-100 characters.');
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // Email validation (RFC 5322 compliant)
+                const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+                if (!emailRegex.test(email)) {
+                    alert('Please enter a valid email address.');
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // Phone validation (optional)
+                if (phone && !/^[\d\s\+\-\(\)]{7,20}$/.test(phone)) {
+                    alert('Please enter a valid phone number.');
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // Message validation
+                if (message.length < 10 || message.length > 5000) {
+                    alert('Message must be between 10-5000 characters.');
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                    return;
+                }
+
+                // Service names mapping
                 const serviceNames = {
                     'security-assessment': 'Security Assessment',
                     'vulnerability-scanning': 'Vulnerability Scanning',
@@ -280,16 +381,17 @@
                 };
 
                 const templateParams = {
-                    from_name: document.getElementById('name').value,
-                    from_email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value || 'Not provided',
-                    company: document.getElementById('company').value || 'Not provided',
-                    service: serviceNames[document.getElementById('service').value] || 'General Inquiry',
-                    message: document.getElementById('message').value
+                    from_name: name,
+                    from_email: email,
+                    phone: phone || 'Not provided',
+                    company: company || 'Not provided',
+                    service: serviceNames[service] || 'General Inquiry',
+                    message: message
                 };
 
                 try {
                     await emailjs.send('Trace_Veil_notifications', 'template_2ieyto7', templateParams);
+                    localStorage.setItem('lastFormSubmit', Date.now().toString());
                     showSuccessMessage();
                     this.reset();
                 } catch (error) {
